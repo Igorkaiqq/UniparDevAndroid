@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+
+    <Spinner
+        android:id="@+id/spListaClientes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp"/>
+
+
+    <Spinner
+        android:id="@+id/spListaProdutos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp"/>
+
+    <EditText
+        android:id="@+id/edQuantidade"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Quantidade"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp"
+        android:inputType="number"/>
+
+    <Button
+        android:id="@+id/btAdicionarItem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Adicionar Item"
+        android:textSize="20sp"/>
+
+    <ListView
+        android:id="@+id/lvItens"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp" />
+
+    <RadioGroup
+        android:id="@+id/rgCondicaoPagamento"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp">
+
+        <RadioButton
+            android:id="@+id/rbAVista"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="À Vista"/>
+
+        <RadioButton
+            android:id="@+id/rbAPrazo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="A Prazo"/>
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/edQuantidadeParcelas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Quantidade de Parcelas"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp"
+        android:inputType="number"
+        android:visibility="gone"/>
+
+    <ListView
+        android:id="@+id/lvParcelas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="20sp"
+        android:visibility="gone"/>
+
+
+    <TextView
+        android:id="@+id/tvValorTotal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Valor Total: R$ 0.00"
+        android:textSize="20sp"
+        android:textStyle="bold"/>
+
+
+    <Button
+        android:id="@+id/btConcluirPedido"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Concluir Pedido"
+        android:textSize="20sp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"/>
+</LinearLayout>
