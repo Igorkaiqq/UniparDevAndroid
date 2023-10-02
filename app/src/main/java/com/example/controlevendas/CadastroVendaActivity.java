@@ -3,14 +3,17 @@ package com.example.controlevendas;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,74 +21,98 @@ import com.example.controlevendas.modelo.Cliente;
 import com.example.controlevendas.modelo.Produto;
 import com.example.controlevendas.modelo.ItemVenda;
 import com.example.controlevendas.modelo.Parcela;
+import com.example.controlevendas.modelo.Venda;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class CadastroVendaActivity extends AppCompatActivity {
 
-    private Spinner spListaClientes, spListaProdutos;
-    private EditText edQuantidade, edQuantidadeParcelas;
+    private AutoCompleteTextView atClientes, atProdutos;
+    private EditText edQuantidade, edQuantidadeParcelas, edPrecoVenda;
     private Button btAdicionarItem, btConcluirPedido;
     private RadioButton rbAVista, rbAprazo;
-    private ListView lvItens, lvParcelas;
     private RadioGroup rgCondicaoPagamento;
-    private TextView tvValorTotal, tvItens;
-    private ArrayAdapter<Cliente> clienteAdapter;
-    private ArrayAdapter<Produto> produtoAdapter;
-    private ArrayAdapter<ItemVenda> itemAdapter;
-    private ArrayAdapter<Parcela> parcelaAdapter;
-    private ArrayList<ItemVenda> itensVenda;
+    private TextView tvValorTotal, tvItens, tvParcela;
+    private ArrayList<ItemVenda> itensItemVenda;
     private ArrayList<Parcela> parcelas;
     private double valorTotal;
-    private boolean isAVista = true; // Default: à vista
+
+    private double valorSoma;
+    private int posProd;
+    private int posCliente;
+    private boolean isAVista = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_venda);
 
-        spListaClientes = findViewById(R.id.spListaClientes);
-        spListaProdutos = findViewById(R.id.spListaProdutos);
+
+
+        atProdutos = findViewById(R.id.atProduto);
+        atClientes = findViewById(R.id.atClientes);
+        carregarProdutos();
+        carregarClientes();
         edQuantidade = findViewById(R.id.edQuantidade);
         edQuantidadeParcelas = findViewById(R.id.edQuantidadeParcelas);
         btAdicionarItem = findViewById(R.id.btAdicionarItem);
         btConcluirPedido = findViewById(R.id.btConcluirPedido);
-        lvItens = findViewById(R.id.lvItens);
-        lvParcelas = findViewById(R.id.lvParcelas);
+        tvItens = findViewById(R.id.tvItens);
+        tvParcela = findViewById(R.id.tvValorParcela);
         rgCondicaoPagamento = findViewById(R.id.rgCondicaoPagamento);
         tvValorTotal = findViewById(R.id.tvValorTotal);
         rbAVista = findViewById(R.id.rbAVista);
         rbAprazo = findViewById(R.id.rbAPrazo);
+        edPrecoVenda = findViewById(R.id.edPrecoVenda);
+        String textoItens = "";
+        itensItemVenda = new ArrayList<>();
 
-        itensVenda = new ArrayList<>();
-        parcelas = new ArrayList<>();
 
-        // Inicialize os adapters para os spinners
-        clienteAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Controller.getInstance().retornarClientes());
-        clienteAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spListaClientes.setAdapter(clienteAdapter);
 
-        produtoAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Controller.getInstance().retornarProdutos());
-        produtoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spListaProdutos.setAdapter(produtoAdapter);
+        posCliente = -1;
+        atClientes.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String clienteSelecionado = atClientes.getText().toString();
+                ArrayList<Cliente> listaClientes = Controller.getInstance().retornarClientes();
+                for (int j = 0; j < listaClientes.size(); j++) {
+                    if (clienteSelecionado.equals(listaClientes.get(j).getNome())) {
+                        posCliente = j;
+                        return;
+                    }
+                }
 
-        // Inicialize o adapter para a lista de itens
-        itemAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itensVenda);
-        lvItens.setAdapter(itemAdapter);
+                Toast.makeText(CadastroVendaActivity.this, "Cliente não encontrado na lista.", Toast.LENGTH_SHORT).show();
+            }
+        });
 
-        // Inicialize o adapter para a lista de parcelas
-        parcelaAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, parcelas);
-        lvParcelas.setAdapter(parcelaAdapter);
 
-        // Listener para o botão "Adicionar Item"
+        posProd = -1;
+        atProdutos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String produtoSelecionado = atProdutos.getText().toString();
+                ArrayList<Produto> listaProdutos = Controller.getInstance().retornarProdutos();
+                for (int j = 0; j < listaProdutos.size(); j++) {
+                    if (produtoSelecionado.equals(listaProdutos.get(j).getDescricao())) {
+                        posProd = j;
+                        return;
+                    }
+                }
+                Toast.makeText(CadastroVendaActivity.this, "Produto não encontrado na lista.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         btAdicionarItem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 adicionarItem();
+                atualizarItens();
+                atClientes.setEnabled(false);
             }
         });
 
-        // Listener para o botão "Concluir Pedido"
         btConcluirPedido.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,90 +120,189 @@ public class CadastroVendaActivity extends AppCompatActivity {
             }
         });
 
-        // Listener para o RadioGroup "Condição de Pagamento"
         rgCondicaoPagamento.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 if (checkedId == R.id.rbAVista) {
-                    isAVista = true;
+                    double valorAVista = valorTotal * 0.95;
+                    tvParcela.setVisibility(View.GONE);
                     edQuantidadeParcelas.setVisibility(View.GONE);
-                    lvParcelas.setVisibility(View.GONE);
+                    tvValorTotal.setText("Valor Total: R$ " + String.format("%.2f", valorAVista));
                 } else if (checkedId == R.id.rbAPrazo) {
-                    isAVista = false;
                     edQuantidadeParcelas.setVisibility(View.VISIBLE);
-                    lvParcelas.setVisibility(View.VISIBLE);
+                    double valorParcelado = valorTotal * 1.05;
+                    tvParcela.setVisibility(View.VISIBLE);
+                    tvValorTotal.setText("Valor Total: R$ " + String.format("%.2f", valorParcelado));
                 }
             }
         });
+
+        edQuantidadeParcelas.addTextChangedListener(new TextWatcher() {
+            private boolean isUpdating = false;
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (!isUpdating) {
+                    isUpdating = true;
+                    if (!charSequence.toString().isEmpty()) {
+                        int qntParcela = Integer.parseInt(charSequence.toString());
+                        double valorParcela = valorTotal / qntParcela;
+                        tvParcela.setText(String.format(qntParcela + "x de %.2f", valorParcela));
+                        edQuantidadeParcelas.setSelection(edQuantidadeParcelas.getText().length());
+                    }
+
+                    isUpdating = false;
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+
+    }
+
+    private void carregarProdutos(){
+        int tamanhoListaProdutos = Controller.getInstance().retornarProdutos().size();
+        String[] vetProdutos = new String[tamanhoListaProdutos];
+        for (int i = 0; i < tamanhoListaProdutos; i++) {
+           Produto produto = Controller.getInstance().retornarProdutos().get(i);
+           vetProdutos[i] = produto.getDescricao();
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(CadastroVendaActivity.this, android.R.layout.simple_dropdown_item_1line, vetProdutos);
+        atProdutos.setAdapter(adapter);
+    }
+
+    private void carregarClientes(){
+        int tamanhoListaClientes = Controller.getInstance().retornarClientes().size();
+        String[] vetClientes = new String[tamanhoListaClientes];
+        for (int i = 0; i < tamanhoListaClientes; i++) {
+            vetClientes[i] = Controller.getInstance().retornarClientes().get(i).getNome();
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(CadastroVendaActivity.this, android.R.layout.simple_dropdown_item_1line, vetClientes);
+        atClientes.setAdapter(adapter);
     }
 
     private void adicionarItem() {
-        Cliente clienteSelecionado = (Cliente) spListaClientes.getSelectedItem();
-        Produto produtoSelecionado = (Produto) spListaProdutos.getSelectedItem();
-
-        if (clienteSelecionado == null || produtoSelecionado == null) {
-            Toast.makeText(this, "Selecione um cliente e um produto.", Toast.LENGTH_SHORT).show();
+        if (posCliente == -1) {
+            Toast.makeText(this, "Selecione um cliente antes de adicionar um item.", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        int quantidade = Integer.parseInt(edQuantidade.getText().toString());
+        double precoVenda = Double.parseDouble(edPrecoVenda.getText().toString());
+
+        validaCampos(quantidade, precoVenda);
+
+        ItemVenda itemVenda = new ItemVenda();
+        Produto produto = Controller.getInstance().retornarProdutos().get(posProd);
+
+        valorSoma = (precoVenda * quantidade);
+
+        itemVenda.setProduto(produto);
+        itemVenda.setQuantidade(quantidade);
+        itemVenda.setValorUnitario(precoVenda);
+        itemVenda.setValor(valorSoma);
+        Controller.getInstance().salvarItemVenda(itemVenda);
+        itensItemVenda.add(itemVenda);
+
+        posProd = -1;
+
+        valorTotal += valorSoma;
+
+        tvValorTotal.setText("Valor Total: R$ " + String.format("%.2f", valorTotal));
+
+        limparCampos(false);
+    }
+
+
+    private void atualizarItens() {
+        String texto = "";
+        for (ItemVenda itemVenda : Controller.getInstance().retornarItemVenda()) {
+            texto += "Produto: " + itemVenda.getProduto().getDescricao() + // Obtenha a descrição do produto
+                    " - Quantidade: " + itemVenda.getQuantidade() +
+                    " - ValorUnitario: R$ " + String.format("%.2f", itemVenda.getValorUnitario()) +
+                    " - Valor: R$ " + String.format("%.2f", itemVenda.getValor()) +
+                    "\n---------------------------" +
+                    "\n";
+        }
+        tvItens.setText(texto);
+    }
+
+
+    public void validaCampos(int quantidade, double precoVenda){
 
         if (edQuantidade.getText().toString().isEmpty()) {
             Toast.makeText(this, "Informe a quantidade.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int quantidade = Integer.parseInt(edQuantidade.getText().toString());
-
         if (quantidade <= 0) {
-            Toast.makeText(this, "A quantidade deve ser maior que zero.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "A quantidade informada deve ser maior que 0.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        double valorItem = produtoSelecionado.getPreco() * quantidade;
+        if (edPrecoVenda.getText().toString().isEmpty()){
+            Toast.makeText(this, "O campo de preço unitario deve ser preenchido", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        ItemVenda itemVenda = new ItemVenda(clienteSelecionado, produtoSelecionado, quantidade, valorItem);
-        itensVenda.add(itemVenda);
+        if (precoVenda <= 0) {
+            Toast.makeText(this, "O preço informado deve ser maior que 0.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+    }
 
-        valorTotal += valorItem;
-        tvValorTotal.setText("Valor Total: R$ " + String.format("%.2f", valorTotal));
+    public void limparCampos(boolean condicao){
+        edQuantidade.setText(null);
+        edPrecoVenda.setText(null);
+        atProdutos.setText(null);
 
-        itemAdapter.notifyDataSetChanged();
+        if (condicao){
+            atClientes.setText(null);
+            tvItens.setText(null);
+        }
+
     }
 
     private void concluirPedido() {
-        if (itensVenda.isEmpty()) {
+        if (itensItemVenda.isEmpty()) {
             Toast.makeText(this, "Adicione pelo menos um item ao pedido.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!isAVista) {
-            if (edQuantidadeParcelas.getText().toString().isEmpty()) {
-                Toast.makeText(this, "Informe a quantidade de parcelas.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            int quantidadeParcelas = Integer.parseInt(edQuantidadeParcelas.getText().toString());
-
-            if (quantidadeParcelas <= 0) {
-                Toast.makeText(this, "A quantidade de parcelas deve ser maior que zero.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            double valorParcela = valorTotal / quantidadeParcelas;
-
-            parcelas.clear();
-            for (int i = 1; i <= quantidadeParcelas; i++) {
-                parcelas.add(new Parcela(i, valorParcela));
-            }
-
-            parcelaAdapter.notifyDataSetChanged();
+        if (posCliente == -1) {
+            Toast.makeText(this, "Selecione um cliente válido.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        if (isAVista) {
-            valorTotal *= 0.95; // Aplicar desconto de 5% para vendas à vista
-        } else {
-            valorTotal *= 1.05; // Aplicar acréscimo de 5% para vendas a prazo
-        }
+        Cliente clienteSelecionado = Controller.getInstance().retornarClientes().get(posCliente);
+
+        Venda venda = new Venda();
+        venda.setCliente(clienteSelecionado);
+        venda.setItensVenda(itensItemVenda);
+        venda.setValorTotal(valorTotal);
+        venda.setDataVenda(new Date());
+
+        Controller.getInstance().salvarVenda(venda);
 
         Toast.makeText(this, "Pedido de venda cadastrado com sucesso!", Toast.LENGTH_SHORT).show();
+
+        atClientes.setEnabled(true);
+        limparCampos(true);
+        itensItemVenda.clear();
+        valorTotal = 0.0;
+        tvValorTotal.setText("Valor Total: R$ 0.00");
+
+        this.finish();
     }
+
+
 }

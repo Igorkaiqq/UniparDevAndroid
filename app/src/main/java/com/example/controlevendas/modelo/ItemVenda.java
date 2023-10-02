@@ -1,20 +1,23 @@
 package com.example.controlevendas.modelo;
 
 public class ItemVenda {
-    private Cliente cliente;
+
     private Produto produto;
     private int quantidade;
-    private double valorItem;
+    private double valorUnitario;
 
-    public ItemVenda(Cliente cliente, Produto produto, int quantidade, double valorItem) {
-        this.cliente = cliente;
+    private double valor;
+
+    public ItemVenda(Produto produto, int quantidade, double valorUnitario, double valor) {
         this.produto = produto;
         this.quantidade = quantidade;
-        this.valorItem = valorItem;
+        this.valorUnitario = valorUnitario;
+        this.valor = valor;
+
     }
 
-    public Cliente getCliente() {
-        return cliente;
+    public ItemVenda(){
+
     }
 
     public Produto getProduto() {
@@ -25,15 +28,36 @@ public class ItemVenda {
         return quantidade;
     }
 
-    public double getValorItem() {
-        return valorItem;
+    public void setProduto(Produto produto) {
+        this.produto = produto;
+    }
+
+    public void setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
+    }
+
+
+    public double getValorUnitario() {
+        return valorUnitario;
+    }
+
+    public void setValorUnitario(double valorUnitario) {
+        this.valorUnitario = valorUnitario;
+    }
+
+    public double getValor() {
+        return valor;
+    }
+
+    public void setValor(double valor) {
+        this.valor = valor;
     }
 
     @Override
     public String toString() {
-        return "Cliente: " + cliente.getNome() +
-                ", Produto: " + produto.getDescricao() +
+        return "Produto: " + produto.getDescricao() +
                 ", Quantidade: " + quantidade +
-                ", Valor: R$ " + String.format("%.2f", valorItem);
+                ", ValorUnitario: R$ " + String.format("%.2f", valorUnitario) +
+                ", Valor: R$ " + String.format("%.2f", valor);
     }
 }
